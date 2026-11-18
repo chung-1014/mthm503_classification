@@ -8,6 +8,8 @@ from sklearn.discriminant_analysis import (
     LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis)
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 from src.supervised.stubs import (
     stub_get_metrics_df, stub_generate_predictions, stub_compute_roc_data, stub_perform_split,
@@ -35,6 +37,9 @@ MODELS = {
     "qda": QuadraticDiscriminantAnalysis(priors=[0.5, 0.5]),
     "logistic": LogisticRegression(max_iter=1000, random_state=42),
     "tree": DecisionTreeClassifier(max_depth=5, random_state=42),
+    "svm": SVC(probability=True, random_state=42),
+    "rf": RandomForestClassifier(n_estimators=100, random_state=42),
+    "gb": GradientBoostingClassifier(n_estimators=100, random_state=42),
 }
 
 
@@ -49,7 +54,10 @@ def prepare_features(df, target_var):
        using pd.get_dummies().
     5. Return X and y.
     """
-    raise NotImplementedExercise
+    y = df[target_var]
+    X_PRE = df.drop(columns=[target_var])
+    X = pd.get_dummies(X_PRE, drop_first=False)
+    return X, y
 
 
 @fallback_to(stub_perform_split)
@@ -61,7 +69,9 @@ def perform_split(X, y):
     3. Use a random_state of 1999 for reproducibility.
     4. Return X_train, X_test, y_train and y_test.
     """
-    raise NotImplementedExercise
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, stratify=y, random_state=1999)
+    return X_train, X_test, y_train, y_test 
 
 
 @fallback_to(stub_get_classifier)
@@ -82,7 +92,10 @@ def get_classifier(model_type):
     ValueError
         If model_type is not a recognised model name.
     """
-    return NotImplementedExercise
+    if model_type not in MODELS:
+        raise ValueError(f"Unknown model_type: {model_type}")
+    
+    return MODELS[model_type]
 
 
 @fallback_to(stub_train_model)
@@ -93,7 +106,9 @@ def train_model(X, y, model_obj):
     2. Fit the 'model_obj' using this data.
     3. Return the now-fitted model object.
     """
-    return NotImplementedExercise
+
+    model_obj.fit(X, y)
+    return model_obj
 
 
 @fallback_to(stub_generate_predictions)
@@ -112,7 +127,11 @@ def generate_predictions(X, model):
     Returns:
     tuple: (y_pred, y_prob)
     """
-    raise NotImplementedExercise
+
+    y_pred = model.predict(X)
+    y_prob = model.predict_proba(X)
+    return y_pred, y_prob
+
 
 
 @fallback_to(stub_get_metrics_df)
@@ -133,7 +152,10 @@ def get_metrics_df(y_test, y_pred):
     Returns:
     pd.DataFrame: A formatted metrics report.
     """
-    raise NotImplementedExercise
+    report = classification_report(y_test, y_pred, output_dict=True)
+    metrics_df = pd.DataFrame(report).transpose()
+    metrics_df = metrics_df.round(2)
+    return metrics_df
 
 
 @fallback_to(stub_encode_labels)
@@ -152,7 +174,10 @@ def encode_labels(y):
     np.ndarray: Encoded labels represented as integers (e.g. 0 and 1
     for a binary classification problem).
     """
-    raise NotImplementedExercise
+    encoder = LabelEncoder()
+    y_encoded = encoder.fit_transform(y)
+    return y_encoded
+
 
 
 
@@ -176,7 +201,15 @@ def compute_roc_data(y_test, y_prob):
     Returns:
     pd.DataFrame: DataFrame containing fpr, tpr, and the scalar auc score.
     """
-    raise NotImplementedExercise
+    probabilities = pd.DataFrame(y_prob)
+    positive_probabilities = (
+        probabilities.iloc[:, 0] if probabilities.shape[1] == 1
+        else probabilities.iloc[:, 1]
+    )
+    fpr, tpr, _ = roc_curve(y_test, positive_probabilities)
+    auc_score = auc(fpr, tpr)
+    roc_data = pd.DataFrame({'fpr': fpr, 'tpr': tpr, 'auc': [auc_score] * len(fpr)})
+    return roc_data 
 
 
 def plot_roc(classifier_data):

@@ -16,5 +16,5 @@ dependencies:
   - duckdb
   - pip
   - pip:
-    - psycopg2
+    - psycopg2-binary
 
