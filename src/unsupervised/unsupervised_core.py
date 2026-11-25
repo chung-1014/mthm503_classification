@@ -21,7 +21,11 @@ def scale_data(df):
        names and index as the original.
     4. Return a tuple containing: (the fitted scaler object, the scaled DataFrame).
     """
-    raise NotImplementedExercise
+    df_numeric = df.select_dtypes(include=['number'])
+    scaler = StandardScaler()
+    scaled_array = scaler.fit_transform(df_numeric)
+    scaled_df = pd.DataFrame(scaled_array, columns=df_numeric.columns, index=df_numeric.index)
+    return scaler, scaled_df
 
 
 @fallback_to(stub_run_kmeans)
@@ -32,7 +36,9 @@ def run_kmeans(data, k):
     2. Fit the model to the provided 'data'.
     3. Return the fitted KMeans object.
     """
-    raise NotImplementedExercise
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(data)
+    return kmeans
 
 
 @fallback_to(stub_compute_linkage)
@@ -43,7 +49,8 @@ def compute_linkage(scaled_data, method='ward'):
     2. Compute the linkage matrix using the specified 'method' (default is 'ward').
     3. Return the linkage matrix (Z).
     """
-    raise NotImplementedExercise
+    Z = linkage(scaled_data, method=method)
+    return Z
 
 
 def create_dendrogram(Z, title="Hierarchical Clustering Dendrogram"):
@@ -79,7 +86,8 @@ def get_cluster_labels(Z, height):
     Returns:
     ndarray: An array of cluster labels for each sample.
     """
-    raise NotImplementedExercise
+    labels = fcluster(Z, t=height, criterion='distance')
+    return labels
 
 
 @fallback_to(stub_project_pca)
@@ -101,7 +109,11 @@ def project_pca(df, n_components=2):
     Returns:
     pd.DataFrame: A DataFrame containing the projected Z-values (principal components).
     """
-    raise NotImplementedExercise
+    pca = PCA(n_components=n_components)
+    projected_data = pca.fit_transform(df)
+    pc_columns = [f'PC{i+1}' for i in range(n_components)]
+    df_pca = pd.DataFrame(projected_data, columns=pc_columns, index=df.index)
+    return df_pca
 
 
 def plot_cluster_scatter(df_pca, labels, title="Cluster Visualisation"):
